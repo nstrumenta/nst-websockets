@@ -16,10 +16,10 @@ var logfileWriter = null;
 function appendToLog(event) {
   if (logfileWriter == null) {
 
-    if (!fs.existsSync("logs")) {
-      fs.mkdirSync("logs");
+    if (!fs.existsSync("./logs")) {
+      fs.mkdirSync("./logs");
     }
-    var dataDirectory = "logs/nst" + Date.now();
+    var dataDirectory = "./logs/nst" + Date.now();
     fs.mkdirSync(dataDirectory);
     logfileWriter = fs.createWriteStream(dataDirectory + "/nst-events.ldjson", { flags: 'a' });
   }
@@ -72,12 +72,12 @@ setInterval(() => {
   updateStatus(null, Date.now());
 }, 1000);
 
-app.use(express.static('public'));
+app.use(express.static('./public'));
 app.use('/logs', express.static('logs'), serveIndex('logs', { 'icons': false }))
 
 
 app.get('/', function (req, res) {
-  res.sendfile('index.html');
+  res.sendfile('./index.html');
 });
 
 io.on('connection', function (socket) {
