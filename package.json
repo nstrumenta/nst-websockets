@@ -1,0 +1,33 @@
+{
+  "name": "nst-websockets",
+  "version": "1.0.1",
+  "description": "\"websocket server and serialport logger\"",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "nst-websockets": "./index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nstrumenta/nst-websockets.git"
+  },
+  "keywords": [
+    "websockets",
+    "serialport"
+  ],
+  "author": "Tyler Bryant",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/nstrumenta/nst-websockets/issues"
+  },
+  "homepage": "https://github.com/nstrumenta/nst-websockets#readme",
+  "dependencies": {
+    "express": "^4.16.4",
+    "minimist": "^1.2.0",
+    "serve-index": "^1.9.1",
+    "socket.io": "^2.1.1"
+  }
+}

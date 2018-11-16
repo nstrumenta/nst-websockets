@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <link rel="stylesheet" href="css/material.indigo-pink.min.css">
+  <script defer src="js/material.min.js"></script>
+  <script src="js/knockout-min.js"></script>
+  <script src="js/socket.io.js"></script>
+  <script defer="defer" src="js/admin.js"></script>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+</head>
+
+<body>
+  clientsCount: <span data-bind="text: clientsCount"> </span>
+  <br/>
+  <button class="mdl-button" id="restart-log-button">start new log</button>
+  <ul class="demo-list-item mdl-list" data-bind="foreach: sensor">
+    <li class="mdl-list__item">
+      <span class="mdl-list__item-primary-content" data-bind="text: id">
+      <span class="mdl-list__item-primary-content" data-bind="text: id">
+      </span>
+    </li>
+  </ul>
+</body>
+
+</html>
