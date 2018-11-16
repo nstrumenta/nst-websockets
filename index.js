@@ -10,6 +10,9 @@ var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var fs = require('fs');
 
+var appRoot = require('path').dirname(require.main.filename);
+console.log(appRoot);
+
 //file stream
 var logfileWriter = null;
 
@@ -72,12 +75,12 @@ setInterval(() => {
   updateStatus(null, Date.now());
 }, 1000);
 
-app.use(express.static('./public'));
+app.use(express.static(appRoot+'/public'));
 app.use('/logs', express.static('logs'), serveIndex('logs', { 'icons': false }))
 
 
 app.get('/', function (req, res) {
-  res.sendfile('./index.html');
+  res.sendFile(appRoot+'/index.html');
 });
 
 io.on('connection', function (socket) {
