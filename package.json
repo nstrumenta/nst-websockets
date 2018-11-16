@@ -1,6 +1,6 @@
 {
   "name": "nst-websockets",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "\"websocket server and serialport logger\"",
   "main": "index.js",
   "scripts": {
