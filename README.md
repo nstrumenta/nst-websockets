@@ -15,9 +15,18 @@ Once installed locally, run nst-websockets from the command line with optional p
 ```bash
 nst-websockets --port 8080
 ```
-Opening localhost:8080 in the browser will display the minimal admin panel that shows the number of connected socket clients (the browser tab is a client).
+Opening localhost:8080 in the browser will display the minimal admin panel that shows the number of connected socket clients (the browser tab is a client):
 
-Any messages received will be logged to a local file such as with a folder named on the start time.  Each log entry will also be timestamped with the server time.
+![Alt text](screenshots/admin.png?raw=true "browser screenshot")
+
+
+Any messages received will be logged to a local file such as:
+
+```bash
+logs/nst1536704358009/nst-events.ldjson
+```
+
+the folder name is generated from the start time.  Each log entry will also be timestamped with the server time.
 
 ### Sending to the server from your client
 
