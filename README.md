@@ -28,7 +28,25 @@ logs/nst1536704358009/nst-events.ldjson
 
 the folder name is generated from the start time.  Each log entry will also be timestamped with the server time.
 
-### Sending to the server from your client
+### Tcp Client
+
+#### Configuration
+
+local file ```nst-websockets-config.json``` is used to configure the websocket server as a TCP client to specified TCP servers
+
+```json
+{
+  "tcpServers": [
+    {
+      "port": "1337",
+      "address": "0.0.0.0"
+    }
+  ]
+}
+```
+
+
+### Sending to the server from your socket.io client
 
 Connect to the server with a socket.io client:
 https://socket.io/

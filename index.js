@@ -1,6 +1,7 @@
 var express = require('express');
 var io = require('socket.io');
 var argv = require('minimist')(process.argv.slice(2));
+var debug = argv.debug || false;
 var port = argv.port || 8080;
 
 var app = require('express')();
@@ -9,6 +10,55 @@ var serveIndex = require('serve-index')
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var fs = require('fs');
+
+//config file for tcp clients
+var fs = require("fs");
+tcpServers = [];
+if (fs.existsSync('nst-websockets-config.json')) {
+  console.log('nst-websockets-config.json begin:');
+  var config = JSON.parse(fs.readFileSync("nst-websockets-config.json", "utf8"));
+  (config.tcpServers).forEach(element => {    
+    console.dir(element);
+    tcpServers.push(element);
+  });
+  console.log('nst-websockets-config.json end');
+}
+
+var net = require('net');
+
+tcpServers.forEach(function (tcpServer) {
+  var client = new net.Socket();
+  var clientId =  tcpServer.address + ':' + tcpServer.port;
+
+  client.connect(tcpServer.port, tcpServer.address, function () {
+    console.log('Connected to ' + clientId);
+  });
+
+  client.on('data', function (data) {
+    if(debug){
+      console.log(clientId + ' ' + data.toString());
+    }
+    var serverTimeMs = Date.now();
+    var message = {
+      id: clientId,
+      data: data.toString()
+    }
+    updateStatus(message, serverTimeMs);
+    message.serverTimeMs = serverTimeMs;
+    appendToLog(message);
+    io.emit('sensor', message);
+  });
+
+  client.on('close', function () {
+    console.log('Connection to ' + tcpServer.address + ':' + tcpServer.port + ' closed');
+  });
+
+  client.on('error', function (err) {
+    console.log('error ' + err);
+  });
+
+});
+
 
 var appRoot = require('path').dirname(require.main.filename);
 console.log(appRoot);
@@ -32,7 +82,6 @@ function appendToLog(event) {
     logfileWriter.write(data);
   }
 }
-
 
 //status for admin console
 var lastStatusUpdateTime = 0;
@@ -75,12 +124,12 @@ setInterval(() => {
   updateStatus(null, Date.now());
 }, 1000);
 
-app.use(express.static(appRoot+'/public'));
+app.use(express.static(appRoot + '/public'));
 app.use('/logs', express.static('logs'), serveIndex('logs', { 'icons': false }))
 
 
 app.get('/', function (req, res) {
-  res.sendFile(appRoot+'/index.html');
+  res.sendFile(appRoot + '/index.html');
 });
 
 io.on('connection', function (socket) {
