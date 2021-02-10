@@ -1,8 +1,12 @@
 var express = require("express");
 var io = require("socket.io");
 var argv = require("minimist")(process.argv.slice(2));
-var debug = argv.debug || false;
+const FormData = require("form-data");
+const axios = require("axios");
+
+var debug = argv.debug ? argv.debug : false;
 var port = argv.port || 8080;
+var projectId = argv.projectId;
 
 var app = require("express")();
 var serveIndex = require("serve-index");
@@ -73,13 +77,33 @@ function appendToLog(event) {
     if (!fs.existsSync("./logs")) {
       fs.mkdirSync("./logs");
     }
-    var dataDirectory = "./logs/nst" + Date.now();
-    fs.mkdirSync(dataDirectory);
-    logfileWriter = fs.createWriteStream(dataDirectory + "/nst-events.ldjson", {
-      flags: "a",
+    const dataDirectory = "./logs/";
+    const fileName = `nst${Date.now()}.ldjson`;
+    const filePath = dataDirectory + fileName;
+    logfileWriter = fs.createWriteStream(filePath, { flags: "a" });
+    console.log("starting log", fileName);
+
+    logfileWriter.on("finish", () => {
+      console.log(filePath, "write finished");
+      if (projectId) {
+        console.log(`posting file ${filePath} to projectId ${projectId}`);
+        const nstrumentaProjectUrl = `https://us-central1-nstrumenta-dev.cloudfunctions.net/uploadFile?projectId=${projectId}`;
+
+        const form = new FormData();
+        form.append("file", fs.readFileSync(filePath), fileName);
+        const formHeaders = form.getHeaders();
+        const request_config = {
+          headers: {
+            ...formHeaders,
+            "Content-Type": "multipart/form-data",
+          },
+        };
+        axios.post(nstrumentaProjectUrl, form, request_config).catch((err) => {
+          console.log(err);
+        });
+      }
     });
   }
-
   if (logfileWriter != null) {
     var data = JSON.stringify(event) + "\n";
     logfileWriter.write(data);
@@ -141,10 +165,16 @@ io.on("connection", function (socket) {
     updateStatus(message, serverTimeMs);
     message.serverTimeMs = serverTimeMs;
     appendToLog(message);
+    if (debug) {
+      console.log(JSON.stringify(message));
+    }
     io.emit("sensor", message);
   });
   socket.on("restart-log", function (message) {
     console.log("restart-log");
+    if (logfileWriter) {
+      logfileWriter.end();
+    }
     logfileWriter = null;
   });
 
