@@ -1,3 +1,4 @@
+import time
 import socketio
 
 sio = socketio.Client()
@@ -7,6 +8,7 @@ def connect():
     print('connection established')
     for i in range(1, 100):
         sio.emit('sensor', {'foo': i})
+        time.sleep(.1)
 
 @sio.event
 def my_message(data):
@@ -18,5 +20,3 @@ def disconnect():
     print('disconnected from server')
 
 sio.connect('http://localhost:8080')
-
-
