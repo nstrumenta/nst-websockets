@@ -51,6 +51,22 @@ document.getElementById("load-algorithm").onchange = (ev) => {
   // file picker then send js file over websocket
 };
 
+document.getElementById("load-parameters").onchange = (ev) => {
+  console.log(ev);
+  try {
+    console.log(ev.currentTarget.files[0]);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const nstProject = JSON.parse(reader.result);
+      console.log(nstProject);
+      socket.emit("loadParameters", nstProject.parameters);
+    };
+    reader.readAsText(ev.currentTarget.files[0]);
+  } catch (e) {
+    console.error(e);
+  }
+};
+
 // begin map
 polylines = [];
 renderEvent = (event) => {
@@ -75,6 +91,13 @@ renderEvent = (event) => {
         event.values[1]
       );
       addToPolyline("fused-vdr", "blue", vdrLatLng);
+      break;
+    case 65666:
+      const gpsOutputLatLng = new google.maps.LatLng(
+        event.values[0],
+        event.values[1]
+      );
+      addToPolyline("gps-output", "red", gpsOutputLatLng);
       break;
     case "GPS":
       const gpsLatLng = new google.maps.LatLng(event.latitude, event.longitude);
@@ -155,7 +178,7 @@ function addToPolyline(id, color, latLng) {
   }
   var path = polylines[id].getPath();
   path.push(latLng);
-  if (path.length > 1000) {
+  if (path.length > 50000) {
     path.removeAt(0);
   }
 }

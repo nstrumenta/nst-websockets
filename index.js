@@ -183,7 +183,6 @@ io.on("connection", function (socket) {
     if (debug) {
       console.log(JSON.stringify(message));
     }
-    io.emit("sensor", message);
 
     // Parse trax, speed, latitiude and longitude messages
     let event = null;
@@ -228,6 +227,9 @@ io.on("connection", function (socket) {
     console.log("loading algorithm", message);
     const workerKey = message.name;
     const algorithmWorker = new Worker("./algorithmWorker.js");
+    algorithmWorkers.forEach((worker) => {
+      worker.terminate();
+    });
     algorithmWorkers.clear();
     algorithmWorkers.set(workerKey, algorithmWorker);
     console.log("adding algorithmWorker", workerKey);
@@ -244,6 +246,16 @@ io.on("connection", function (socket) {
     });
   });
 
+  socket.on("loadParameters", (message) => {
+    console.log("loading parameters", message);
+    algorithmWorkers.forEach((worker) => {
+      worker.postMessage({
+        type: "loadParameters",
+        parameters: message.parameters,
+      });
+    });
+  });
+
   socket.on("restart-log", function (message) {
     console.log("restart-log");
     if (logfileWriter) {
@@ -251,7 +263,7 @@ io.on("connection", function (socket) {
     }
     logfileWriter = null;
     algorithmWorkers.forEach((worker) => {
-      worker.postMessage({ type: "reset" });
+      worker.postMessage({ type: "restart" });
     });
   });
 

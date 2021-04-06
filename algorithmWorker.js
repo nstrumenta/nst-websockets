@@ -4,6 +4,22 @@ var Module = {};
 
 function Algorithm() {
   let nstrumenta;
+  let parameters;
+
+  restartAlgorithm = () => {
+    if (nstrumenta) {
+      nstrumenta.init();
+      if (parameters) {
+        //TODO relying on order of parameters is easily broken
+        // keeping an integer parameter ID as a value in parameters
+        // or using a short string as a key
+        for (index in parameters) {
+          const param = parameters[index];
+          nstrumenta.setParameter(Number(index), Number(param.value));
+        }
+      }
+    }
+  };
 
   parentPort.onmessage = function (e) {
     // console.log("message from parent to algorithmworker", e.data.type);
@@ -41,12 +57,19 @@ function Algorithm() {
           values[8]
         );
 
+        //special case for GPS - pass through
+        if (event.id == 65666) {
+          parentPort.postMessage({ type: "outputEvent", event });
+        }
+
         break;
 
-      case "reset":
-        if (nstrumenta) {
-          nstrumenta.init();
-        }
+      case "loadParameters":
+        parameters = e.data.parameters;
+        restartAlgorithm();
+
+      case "restart":
+        restartAlgorithm();
         break;
     }
   };
