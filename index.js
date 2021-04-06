@@ -4,6 +4,8 @@ var argv = require("minimist")(process.argv.slice(2));
 const FormData = require("form-data");
 const axios = require("axios");
 
+const { Worker } = require("worker_threads");
+
 var debug = argv.debug ? argv.debug : false;
 var port = argv.port || 8080;
 var projectId = argv.projectId;
@@ -52,6 +54,8 @@ tcpServers.forEach(function (tcpServer) {
     updateStatus(message, serverTimeMs);
     message.serverTimeMs = serverTimeMs;
     appendToLog(message);
+
+    //re-broadcast sensor inputs to connected clients
     io.emit("sensor", message);
   });
 
@@ -148,7 +152,7 @@ function updateStatus(sensorEvent, serverTimeMs) {
 
 setInterval(() => {
   updateStatus(null, Date.now());
-}, 1000);
+}, 3000);
 
 app.use(express.static(appRoot + "/public"));
 app.use("/logs", express.static("logs"), serveIndex("logs", { icons: false }));
@@ -157,11 +161,22 @@ app.get("/", function (req, res) {
   res.sendFile(appRoot + "/index.html");
 });
 
+let algorithmWorkers = new Map();
+
+const SensorEvent = function (timestamp, id, values) {
+  this.timestamp = timestamp;
+  this.id = id;
+  this.values = values;
+};
+
 io.on("connection", function (socket) {
   console.log("a user connected - clientsCount = " + io.engine.clientsCount);
 
   socket.on("sensor", function (message) {
     var serverTimeMs = Date.now();
+    if (typeof message === "string") {
+      message = JSON.parse(message);
+    }
     updateStatus(message, serverTimeMs);
     message.serverTimeMs = serverTimeMs;
     appendToLog(message);
@@ -169,13 +184,74 @@ io.on("connection", function (socket) {
       console.log(JSON.stringify(message));
     }
     io.emit("sensor", message);
+
+    // Parse trax, speed, latitiude and longitude messages
+    let event = null;
+    switch (message.id) {
+      case "trax":
+        event = new SensorEvent();
+        event.id = 3002;
+        event.timestamp = message.data.serialPortTimestamp;
+        event.values = [message.data.traxTimestamp]
+          .concat(message.data.acc)
+          .concat(message.data.gyro)
+          .concat(message.data.mag);
+        break;
+      default:
+        //try parsing again for double quoted json
+        if (typeof message === "string") {
+          message = JSON.parse(message);
+        }
+        //determine sensorEvent id from shape if possible
+        if (message["speed"] !== undefined) {
+          event = new SensorEvent();
+          event.id = 65667;
+          event.timestamp = message.serverTimeMs;
+          event.values = [message["speed"]];
+        } else if (message["latitude"] !== undefined) {
+          event = new SensorEvent();
+          event.id = 65666;
+          event.timestamp = message.serverTimeMs;
+          event.values = [message["latitude"], message["longitude"]];
+        } else {
+          console.log("unknown id", message);
+        }
+    }
+    if (event) {
+      algorithmWorkers.forEach((worker) => {
+        worker.postMessage({ type: "inputEvent", event });
+      });
+    }
   });
+
+  socket.on("loadAlgorithm", (message) => {
+    console.log("loading algorithm", message);
+    const workerKey = message.name;
+    const algorithmWorker = new Worker("./algorithmWorker.js");
+    algorithmWorkers.set(workerKey, algorithmWorker);
+    console.log("adding algorithmWorker", workerKey);
+    algorithmWorker.postMessage({
+      type: "loadAlgorithm",
+      payload: message.data,
+    });
+    algorithmWorker.on("message", (message) => {
+      switch (message.type) {
+        case "outputEvent":
+          updateStatus(message.event, message.timestamp);
+          io.emit("outputEvent", message.event);
+      }
+    });
+  });
+
   socket.on("restart-log", function (message) {
     console.log("restart-log");
     if (logfileWriter) {
       logfileWriter.end();
     }
     logfileWriter = null;
+    algorithmWorkers.forEach((worker) => {
+      worker.postMessage({ type: "reset" });
+    });
   });
 
   socket.on("disconnect", function () {

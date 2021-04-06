@@ -2,21 +2,41 @@
 <html>
 
 <head>
+  <style>
+    #map {
+      width: 100%;
+      height: 600px;
+    }
+  </style>
   <link rel="stylesheet" href="css/material.indigo-pink.min.css">
   <script defer src="js/material.min.js"></script>
   <script src="js/knockout-min.js"></script>
   <script src="js/socket.io.js"></script>
   <script defer="defer" src="js/admin.js"></script>
+  <script async
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBNvvj5ppZMA-Et7KiZQsSrzxBIYDHHjvo&libraries=visualization,drawing,geometry&callback=initMap"></script>
   <link rel="icon" type="image/x-icon" href="favicon.ico">
 </head>
 
 <body>
   clientsCount: <span data-bind="text: clientsCount"> </span>
-  <br/>
+  <br />
   <button class="mdl-button" id="restart-log-button">start new log</button>
-  <ul class="demo-list-item mdl-list" data-bind="foreach: sensor">
+  <style>
+    #load-algorithm {
+      display: none
+    }
+  </style>
+
+  <input type="file" id="load-algorithm" accept=".js">
+  <label for="load-algorithm" class="mdl-button">
+    Load Algorithm
+  </label>
+
+  <div id="map"></div>
+  <br />
+  <ul class="mdl-list" style="list-style: none; display: inline-flex;" data-bind="foreach: sensor">
     <li class="mdl-list__item">
-      <span class="mdl-list__item-primary-content" data-bind="text: id">
       <span class="mdl-list__item-primary-content" data-bind="text: id">
       </span>
     </li>
