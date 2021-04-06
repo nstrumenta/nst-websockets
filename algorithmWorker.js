@@ -42,6 +42,12 @@ function Algorithm() {
         );
 
         break;
+
+      case "reset":
+        if (nstrumenta) {
+          nstrumenta.init();
+        }
+        break;
     }
   };
 }

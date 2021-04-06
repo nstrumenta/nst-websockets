@@ -28,9 +28,19 @@ socket.on("status", function (message) {
   previousMessage = message;
 });
 
+socket.on("sensor", (event) => {
+  renderEvent(event);
+});
+
+socket.on("outputEvent", (event) => {
+  renderEvent(event);
+});
+
 document.getElementById("restart-log-button").onclick = (ev) => {
+  clearPolylines();
   socket.emit("restart-log");
 };
+document.getElementById("center-map-button").onclick = centerMap;
 
 document.getElementById("load-algorithm").onchange = (ev) => {
   console.log(ev);
@@ -40,6 +50,67 @@ document.getElementById("load-algorithm").onchange = (ev) => {
 
   // file picker then send js file over websocket
 };
+
+// begin map
+polylines = [];
+renderEvent = (event) => {
+  switch (event.id) {
+    case 1008:
+      const magLatLng = new google.maps.LatLng(
+        event.values[0],
+        event.values[1]
+      );
+      addToPolyline("fused-mag", "green", magLatLng);
+      break;
+    case 1009:
+      const gyroLatLng = new google.maps.LatLng(
+        event.values[0],
+        event.values[1]
+      );
+      addToPolyline("fused-gyro", "purple", gyroLatLng);
+      break;
+    case 1011:
+      const vdrLatLng = new google.maps.LatLng(
+        event.values[0],
+        event.values[1]
+      );
+      addToPolyline("fused-vdr", "blue", vdrLatLng);
+      break;
+    case "GPS":
+      const gpsLatLng = new google.maps.LatLng(event.latitude, event.longitude);
+      addToPolyline("gps", "red", gpsLatLng);
+      break;
+  }
+};
+
+function clearPolylines(matchingPrefix) {
+  for (var key in polylines) {
+    if (polylines.hasOwnProperty(key)) {
+      let isMatch = false;
+      if (matchingPrefix && key.startsWith(matchingPrefix)) {
+        isMatch = true;
+      }
+      if (isMatch || matchingPrefix == null) {
+        polylines[key].setMap(null);
+        delete polylines[key];
+      }
+    }
+  }
+}
+
+function centerMap() {
+  var bounds = new google.maps.LatLngBounds();
+  for (var key in polylines) {
+    if (polylines.hasOwnProperty(key)) {
+      for (var index in polylines[key].getPath().getArray()) {
+        bounds.extend(polylines[key].getPath().getArray()[index]);
+      }
+    }
+  }
+  if (!bounds.isEmpty()) {
+    map.fitBounds(bounds);
+  }
+}
 
 let map;
 let mapCenterPref = window.localStorage.getItem("mapCenter");
@@ -70,6 +141,26 @@ function initMap() {
     window.localStorage.setItem("mapZoom", JSON.stringify(map.getZoom()));
   });
 }
+
+function addToPolyline(id, color, latLng) {
+  if (!polylines.hasOwnProperty(id)) {
+    console.log("new polyline: " + id);
+    polylines[id] = new google.maps.Polyline({
+      clickable: false,
+      strokeColor: color,
+      strokeOpacity: 0.5,
+      strokeWeight: 5,
+      map: map,
+    });
+  }
+  var path = polylines[id].getPath();
+  path.push(latLng);
+  if (path.length > 1000) {
+    path.removeAt(0);
+  }
+}
+
+//end map
 
 //knockout for reactive list
 var viewModel = {
