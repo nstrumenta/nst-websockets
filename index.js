@@ -228,6 +228,7 @@ io.on("connection", function (socket) {
     console.log("loading algorithm", message);
     const workerKey = message.name;
     const algorithmWorker = new Worker("./algorithmWorker.js");
+    algorithmWorkers.clear();
     algorithmWorkers.set(workerKey, algorithmWorker);
     console.log("adding algorithmWorker", workerKey);
     algorithmWorker.postMessage({
