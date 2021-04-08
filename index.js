@@ -190,7 +190,7 @@ io.on("connection", function (socket) {
       case "trax":
         event = new SensorEvent();
         event.id = 3002;
-        event.timestamp = message.data.serialPortTimestamp;
+        event.timestamp = message.serverTimeMs;
         event.values = [message.data.traxTimestamp]
           .concat(message.data.acc)
           .concat(message.data.gyro)
@@ -251,7 +251,7 @@ io.on("connection", function (socket) {
     algorithmWorkers.forEach((worker) => {
       worker.postMessage({
         type: "loadParameters",
-        parameters: message.parameters,
+        parameters: message,
       });
     });
   });

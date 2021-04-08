@@ -2,14 +2,20 @@ const { parentPort } = require("worker_threads");
 
 var Module = {};
 
+var Nstrumenta;
+var parameters;
+var previousTimestamp;
+
 function Algorithm() {
   let nstrumenta;
-  let parameters;
 
   restartAlgorithm = () => {
+    console.log("restartAlgorithm");
     if (nstrumenta) {
+      nstrumenta = new Nstrumenta();
       nstrumenta.init();
       if (parameters) {
+        console.log("setting parameters");
         //TODO relying on order of parameters is easily broken
         // keeping an integer parameter ID as a value in parameters
         // or using a short string as a key
@@ -28,7 +34,8 @@ function Algorithm() {
         console.log("loading Algorithm into worker", e.data);
         const source = Buffer.from(e.data.payload).toString();
         eval(source);
-        nstrumenta = new Module.Nstrumenta();
+        Nstrumenta = Module.Nstrumenta;
+        nstrumenta = new Nstrumenta();
         break;
 
       case "inputEvent":
@@ -42,6 +49,13 @@ function Algorithm() {
             values[i] = 0;
           }
         }
+        if (previousTimestamp) {
+          const deltaTime = event.timestamp - previousTimestamp;
+          if (deltaTime < 0) {
+            console.error("out of order", deltaTime, event);
+          }
+        }
+        previousTimestamp = event.timestamp;
         nstrumenta.reportEvent(
           event.timestamp,
           event.id,
@@ -66,6 +80,7 @@ function Algorithm() {
 
       case "loadParameters":
         parameters = e.data.parameters;
+        console.log("loadParameters", parameters);
         restartAlgorithm();
 
       case "restart":
