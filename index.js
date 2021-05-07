@@ -178,7 +178,9 @@ io.on("connection", function (socket) {
       message = JSON.parse(message);
     }
     updateStatus(message, serverTimeMs);
-    message.serverTimeMs = serverTimeMs;
+    if (!message.serverTimeMs) {
+      message.serverTimeMs = serverTimeMs;
+    }
     appendToLog(message);
     if (debug) {
       console.log(JSON.stringify(message));
