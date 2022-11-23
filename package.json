@@ -30,6 +30,6 @@
     "form-data": "^3.0.0",
     "minimist": "^1.2.0",
     "serve-index": "^1.9.1",
-    "socket.io": "^2.1.1"
+    "socket.io": "^2.5.0"
   }
 }
